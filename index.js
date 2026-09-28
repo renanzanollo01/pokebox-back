@@ -1,5 +1,6 @@
 import express from "express";
 import Colecao from "./models/Colecao.js";
+import Pokemon from "./models/Pokemon.js";
 import "./db.js"
 
 const app = express();
@@ -53,6 +54,51 @@ app.delete("/colecoes/:id", async (req, res) => {
   res.status(204).end();
 });
 
+//lista os pokemons
+app.get("/colecoes/:id/pokemons", async (req, res) => {
+  const pokemons = await Pokemon.find({ colecao: req.params.id }).sort({createdAt: -1});
+  res.status(200).json(pokemons);
+});
+
+// Busca um pokemon pelo id
+app.get("/pokemons/:id", async (req, res) => {
+  const pokemon = await Pokemon.findById(req.params.id);
+
+  if (!pokemon) {
+    return res.status(404).json({ erro: "Pokemon não encontrado" });
+  }
+
+  res.status(200).json(pokemon);
+});
+
+//criação de uma colecao nova
+app.post("/pokemons", async (req, res) => {
+  const novoPokemon = await Pokemon.create(req.body)
+  res.status(201).json(novoPokemon);
+});
+
+//atualização do pokemon com put
+app.put("/pokemons/:id", async (req, res) => {
+  const pokemon = await Pokemon.findByIdAndUpdate(req.params.id, req.body, {new: true, runValidators: true});
+
+  if (!pokemon) {
+    return res.status(404).json({ erro: "Pokemon não encontrado" });
+  }
+
+  res.status(200).json(pokemon);
+});
+
+//deletar pokemon
+app.delete("/pokemons/:id", async (req, res) => {
+  const pokemon = await Pokemon.findByIdAndDelete(req.params.id);
+
+  if (!pokemon) {
+    return res.status(404).json({ erro: "Pokemon não encontrado" });
+  }
+
+  res.status(204).end();
+});
+
 // ── TRATAMENTO CENTRAL DE ERROS ───────────────────────────
 // 4 parâmetros = middleware de erro. Precisa vir DEPOIS das rotas.
 app.use((err, req, res, next) => {
@@ -63,7 +109,7 @@ app.use((err, req, res, next) => {
   }
 
   if (err.name === "CastError") {
-    return res.status(400),json({erro: "ID invalido"})
+    return res.status(400).json({erro: "ID invalido"})
   }
 
   console.error(err);
