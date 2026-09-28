@@ -1,18 +1,27 @@
 import express from "express";
 import Colecao from "./models/Colecao.js";
 import Pokemon from "./models/Pokemon.js";
+import cors from "cors"
 import "./db.js"
 
 const app = express();
 const port = 3000;
 
+app.use(cors({ origin: "http://localhost:5173" }))
 app.use(express.json());
 
 // console.log(process.env.MONGO_URI)
 //lista as colecoes
 app.get("/colecoes", async (req, res) => {
-  const colecoes = await Colecao.find().sort({createdAt: -1});
-  res.status(200).json(colecoes);
+  const colecoes = await Colecao.find().sort({createdAt: -1}).lean();
+
+  const comContagem = await Promise.all(
+    colecoes.map(async (colecao) => {
+      const total = await Pokemon.countDocuments({ colecao: colecao._id});
+      return { ...colecao, totalPokemon: total }
+    })
+  )
+  res.status(200).json(comContagem);
 });
 
 // Busca uma colecao pelo id
